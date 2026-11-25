@@ -1,0 +1,30 @@
+Build brief — The Moon Finally Answers Back (make.fun bounty
+u-mang-the-moon-finally-answers-back-781a7ec1)
+
+Task: write ONE line, 1 to 240 characters, in the voice of the Moon
+replying at last to the wishes, howls and late-night promises of
+everyone staring up at it. The house judge reads lines two at a time
+and picks the funniest one that still sounds like the Moon said it.
+
+Rules from the kit (RULES.txt):
+- Program writes one text to /output/entry.txt (or
+  $MAKEFUN_OUTPUT_DIR/entry.txt).
+- Gate: UTF-8 text, 1 to 240 characters, not only whitespace.
+- Judge criteria, most important first: funniest, sounds like the
+  Moon, lands as a comeback in one read; a line that explains its own
+  joke has already lost the laugh.
+- Standard library only, deterministic, no network, no secrets.
+
+Approach:
+1. Wrote 10 original candidates in CANDIDATES.md, each one line,
+   each answering the wishes/howls/promises from the Moon's voice.
+2. Picked the best: "I don't grant wishes. I just reflect sunlight
+   and watch you all make the same mistakes in better lighting."
+   (106 characters) — funny first, unmistakably the Moon's voice
+   ("I just reflect sunlight"), twist in the tail ("in better
+   lighting"), answers the wishes directly, quotable in one read.
+3. main.py (stdlib only) writes exactly that line to entry.txt and
+   re-reads it, asserting the gate (validate_entry) and the sha256
+   digest, so any drift fails loudly.
+4. Ran main.py twice; both runs byte-identical, sha256
+   23507c0e7ffc374030a26d38d6d5612a26702a70cd53ca3be8f1c1259e53313b.
