@@ -55,18 +55,40 @@ def validate_entry(value) -> str:
     Accepts either the text string or the raw bytes read back from the
     entry file, so the same check covers the pre-write guard and the
     post-write read-back verification. Returns the text as a str, or
-    raises AssertionError with a clear message.
+    raises ValueError with a clear message (ValueError, not assert,
+    so the guard survives python -O).
     """
     if isinstance(value, bytes):
         value = value.decode("utf-8")
-    assert 1 <= len(value) <= MAX_CHARS, (
-        f"entry.txt must be 1..{MAX_CHARS} characters, got {len(value)}"
-    )
-    assert value.strip(), "entry.txt must not be only whitespace"
-    assert "\n" not in value and "\r" not in value, (
-        "entry.txt must be a single line"
-    )
+    if not 1 <= len(value) <= MAX_CHARS:
+        raise ValueError(
+            f"entry.txt must be 1..{MAX_CHARS} characters, got {len(value)}"
+        )
+    if not value.strip():
+        raise ValueError("entry.txt must not be only whitespace")
+    if "\n" in value or "\r" in value:
+        raise ValueError("entry.txt must be a single line")
     return value
+
+
+def verify_written_bytes(data: bytes) -> str:
+    """Byte-exact read-back verification: the bytes on disk must have
+    the same length as the intended text's UTF-8 encoding, be equal
+    to it, decode back to the text, and hash to EXPECTED_SHA256."""
+    intended = TEXT.encode("utf-8")
+    if len(data) != len(intended):
+        raise ValueError("read-back byte length mismatch")
+    if data != intended:
+        raise ValueError("read-back bytes differ from the intended text")
+    if validate_entry(data) != TEXT:
+        raise ValueError("read-back text differs from the intended text")
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != EXPECTED_SHA256:
+        raise ValueError(
+            f"entry.txt sha256 mismatch: got {digest}, "
+            f"expected {EXPECTED_SHA256}"
+        )
+    return digest
 
 
 def main() -> None:
@@ -81,14 +103,7 @@ def main() -> None:
     # must hold exactly the text we intended to write.
     with open(path, "rb") as f:
         data = f.read()
-    assert validate_entry(data) == TEXT
-    # Digest verification: the written bytes must hash to the digest
-    # measured from the verified run, proving no drift or stray bytes.
-    digest = hashlib.sha256(data).hexdigest()
-    assert digest == EXPECTED_SHA256, (
-        f"entry.txt sha256 mismatch: got {digest}, "
-        f"expected {EXPECTED_SHA256}"
-    )
+    digest = verify_written_bytes(data)
     print(TEXT)
     print(f"sha256: {digest}")
 
